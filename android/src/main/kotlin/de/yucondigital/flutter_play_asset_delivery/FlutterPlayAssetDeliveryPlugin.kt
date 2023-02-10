@@ -13,6 +13,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry
 import java.io.File
+import java.io.InputStream
 
 /** FlutterPlayAssetDeliveryPlugin */
 class FlutterPlayAssetDeliveryPlugin: FlutterPlugin, MethodCallHandler {
@@ -32,13 +33,18 @@ class FlutterPlayAssetDeliveryPlugin: FlutterPlugin, MethodCallHandler {
     if (call.method == "getAssetFile") {
       var assetName: String = call.arguments.toString()
 
-      if (assetList.contains(assetName)) {
-        val file: File = createTempFile()
-        file.writeBytes(assetManager.open(assetName).readBytes())
-        result.success(file.absolutePath)
-      } else {
+      var stream: InputStream;
+
+      try {
+        stream = assetManager.open(assetName)
+      } catch (e: Exception) {
         result.error("Asset not found", "Asset could not be found.", null)
+        return
       }
+
+      val file: File = createTempFile()
+      file.writeBytes(stream.readBytes())
+      result.success(file.absolutePath)
     } else {
       result.notImplemented()
     }
